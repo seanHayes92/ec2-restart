@@ -1,1 +1,7 @@
 Quick and dirty microservice to kill and restart a particular server instance (hardcoded)
+
+Set up instance using credentials through `aws configure` then run using:
+
+`env FLASK_APP=microservice.py python3 -m flask run`
+
+Sample restart URL: http://18.221.217.91:5000/restart?id=i-0f5850678bbd27ba0&region=us-east-2&force=true

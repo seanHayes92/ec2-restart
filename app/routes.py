@@ -6,10 +6,10 @@ from flask import request
 
 app = Flask(__name__)
 
-def stop_instance(instance_id):
+def stop_instance(instance_id, region):
 
     # Terminate each instance in the argument list
-    ec2 = boto3.client('ec2')
+    ec2 = boto3.client('ec2',region_name=region)
 
     states = None
     try:
@@ -18,16 +18,19 @@ def stop_instance(instance_id):
         print(e)
     return states
 
-def start_instance(instance_id):
+def start_instance(instance_id, region):
 
     # Terminate each instance in the argument list
-    ec2 = boto3.client('ec2')
-
-    try:
-        states = ec2.start_instances(InstanceIds=[instance_id])
-    except ClientError as e:
-        print(e)
-    return states
+    ec2 = boto3.client('ec2', region_name=region)
+    while True:
+        try:
+            print("Attempting to start instance....")
+            time.sleep(30)
+            states = ec2.start_instances(InstanceIds=[instance_id])
+            return states
+        except (ClientError, UnboundLocalError) as e:
+            print("Error")
+            print(e)
 
 @app.route('/')
 def index():
@@ -38,16 +41,17 @@ def index():
 def instance_restart():
 
     instance_id = request.args.get('id')
+    region = request.args.get('region')
 
     force_update = request.args.get('force')
 
-    print(force_update)
+    print(instance_id, force_update, region)
 
     states = None
 
     if (force_update == "true") and (instance_id is not None):
 
-        states = stop_instance(instance_id)
+        states = stop_instance(instance_id, region)
 
         if states is not None:
             print('Stopping the EC2 instance')
@@ -56,7 +60,7 @@ def instance_restart():
 
         time.sleep(60)
 
-        states = start_instance(instance_id)
+        states = start_instance(instance_id, region)
 
         if states is not None:
             print('Starting the EC2 instance')
@@ -72,7 +76,6 @@ def instance_restart():
     else:
 
         return "Value not passed"
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
